@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/listening_question.dart';
@@ -12,9 +14,21 @@ class ListeningScreen extends StatefulWidget {
 
 class _ListeningScreenState extends State<ListeningScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
+  PlayerState? _playerState;
+  late StreamSubscription stream;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _playerState = _audioPlayer.state;
+
+    stream = _audioPlayer.onPlayerStateChanged
+        .listen((it) => setState(() => _playerState = it));
+  }
+
   bool _showText = false;
   int _currentQuestionIndex = 0;
-  bool _isPlaying = false;
 
   @override
   void dispose() {
@@ -23,10 +37,8 @@ class _ListeningScreenState extends State<ListeningScreen> {
   }
 
   void _playAudio() async {
-    if (_isPlaying) return;
-    setState(() => _isPlaying = true);
-
-    ListeningQuestion currentQuestion = listeningQuestions[_currentQuestionIndex];
+    ListeningQuestion currentQuestion =
+        listeningQuestions[_currentQuestionIndex];
 
     // 1回目の再生（テキスト非表示）
     await _audioPlayer.play(AssetSource(currentQuestion.audioPath));
@@ -42,10 +54,6 @@ class _ListeningScreenState extends State<ListeningScreen> {
 
     // 音声終了後、テキストを非表示
     await _audioPlayer.stop();
-    setState(() {
-      _showText = false;
-      _isPlaying = false;
-    });
   }
 
   void _nextQuestion() {
@@ -53,7 +61,6 @@ class _ListeningScreenState extends State<ListeningScreen> {
       setState(() {
         _currentQuestionIndex++;
         _showText = false;
-        _isPlaying = false;
       });
     }
   }
@@ -63,14 +70,16 @@ class _ListeningScreenState extends State<ListeningScreen> {
       setState(() {
         _currentQuestionIndex--;
         _showText = false;
-        _isPlaying = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ListeningQuestion currentQuestion = listeningQuestions[_currentQuestionIndex];
+    ListeningQuestion currentQuestion =
+        listeningQuestions[_currentQuestionIndex];
+
+    bool isPlaying = _playerState == PlayerState.playing;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,8 +102,8 @@ class _ListeningScreenState extends State<ListeningScreen> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _isPlaying ? null : _playAudio,
-              child: Text(_isPlaying ? '再生中...' : '再生'),
+              onPressed: _playAudio,
+              child: Text(isPlaying ? '再生中...' : '再生'),
             ),
             const SizedBox(height: 20),
             if (_showText)
@@ -108,14 +117,16 @@ class _ListeningScreenState extends State<ListeningScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  onPressed: _currentQuestionIndex > 0 ? _previousQuestion : null,
+                  onPressed:
+                      _currentQuestionIndex > 0 ? _previousQuestion : null,
                   child: const Text('前へ'),
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton(
-                  onPressed: _currentQuestionIndex < listeningQuestions.length - 1
-                      ? _nextQuestion
-                      : null,
+                  onPressed:
+                      _currentQuestionIndex < listeningQuestions.length - 1
+                          ? _nextQuestion
+                          : null,
                   child: const Text('次へ'),
                 ),
               ],
