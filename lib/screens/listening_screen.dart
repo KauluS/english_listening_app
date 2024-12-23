@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/listening_question.dart';
@@ -15,7 +14,8 @@ class ListeningScreen extends StatefulWidget {
 class _ListeningScreenState extends State<ListeningScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   PlayerState? _playerState;
-  late StreamSubscription stream;
+
+  bool get _isPlaying => _playerState == PlayerState.playing;
 
   @override
   void initState() {
@@ -23,8 +23,8 @@ class _ListeningScreenState extends State<ListeningScreen> {
 
     _playerState = _audioPlayer.state;
 
-    stream = _audioPlayer.onPlayerStateChanged
-        .listen((it) => setState(() => _playerState = it));
+    _audioPlayer.onPlayerStateChanged
+        .listen((state) => setState(() => _playerState = state));
   }
 
   bool _showText = false;
@@ -36,26 +36,30 @@ class _ListeningScreenState extends State<ListeningScreen> {
     super.dispose();
   }
 
+  // 音声を再生するメソッド
   void _playAudio() async {
     ListeningQuestion currentQuestion =
         listeningQuestions[_currentQuestionIndex];
 
-    // 1回目の再生（テキスト非表示）
-    await _audioPlayer.play(AssetSource(currentQuestion.audioPath));
-    await Future.delayed(Duration(seconds: currentQuestion.duration));
+    int cnt = 0; // 再生回数をカウントする変数
 
-    // テキストを表示
-    setState(() => _showText = true);
-    await _audioPlayer.stop();
+    while (cnt < 2) {
+      if (_isPlaying) {
+        setState(() => _showText = true); // テキストを表示
+      }
 
-    // 2回目の再生（テキスト表示あり）
-    await _audioPlayer.play(AssetSource(currentQuestion.audioPath));
-    await Future.delayed(Duration(seconds: currentQuestion.duration));
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource(currentQuestion.audioPath));
 
-    // 音声終了後、テキストを非表示
-    await _audioPlayer.stop();
+      await _audioPlayer.onPlayerComplete.first; // 再生が終わるまで待機
+
+      sleep(Duration(seconds: 1)); // 1秒待機
+
+      cnt++;
+    }
   }
 
+  // 次の問題に進むメソッド
   void _nextQuestion() {
     if (_currentQuestionIndex < listeningQuestions.length - 1) {
       setState(() {
@@ -65,6 +69,7 @@ class _ListeningScreenState extends State<ListeningScreen> {
     }
   }
 
+  // 前の問題に戻るメソッド
   void _previousQuestion() {
     if (_currentQuestionIndex > 0) {
       setState(() {
@@ -78,8 +83,6 @@ class _ListeningScreenState extends State<ListeningScreen> {
   Widget build(BuildContext context) {
     ListeningQuestion currentQuestion =
         listeningQuestions[_currentQuestionIndex];
-
-    bool isPlaying = _playerState == PlayerState.playing;
 
     return Scaffold(
       appBar: AppBar(
@@ -103,7 +106,7 @@ class _ListeningScreenState extends State<ListeningScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _playAudio,
-              child: Text(isPlaying ? '再生中...' : '再生'),
+              child: Text(_isPlaying ? '再生中...' : '再生'),
             ),
             const SizedBox(height: 20),
             if (_showText)
