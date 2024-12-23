@@ -48,7 +48,6 @@ class _ListeningScreenState extends State<ListeningScreen> {
         setState(() => _showText = true); // テキストを表示
       }
 
-      await _audioPlayer.stop();
       await _audioPlayer.play(AssetSource(currentQuestion.audioPath));
 
       await _audioPlayer.onPlayerComplete.first; // 再生が終わるまで待機
