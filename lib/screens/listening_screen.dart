@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/listening_question.dart';
@@ -44,7 +43,7 @@ class _ListeningScreenState extends State<ListeningScreen> {
     int cnt = 0; // 再生回数をカウントする変数
 
     while (cnt < 2) {
-      if (_isPlaying) {
+      if (cnt > 0) {
         setState(() => _showText = true); // テキストを表示
       }
 
@@ -52,7 +51,7 @@ class _ListeningScreenState extends State<ListeningScreen> {
 
       await _audioPlayer.onPlayerComplete.first; // 再生が終わるまで待機
 
-      sleep(Duration(seconds: 1)); // 1秒待機
+      await Future.delayed(Duration(seconds: 1)); // 1秒待機
 
       cnt++;
     }
