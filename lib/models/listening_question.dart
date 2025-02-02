@@ -1,3 +1,5 @@
+// questions_data.dartファイルで使用されるモデルクラスを定義
+
 class ListeningQuestion {
   final String audioPath;
   final String imagePath;
