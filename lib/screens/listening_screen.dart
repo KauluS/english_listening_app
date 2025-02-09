@@ -40,9 +40,7 @@ class _ListeningScreenState extends State<ListeningScreen> {
     ListeningQuestion currentQuestion =
         listeningQuestions[_currentQuestionIndex];
 
-    int cnt = 0; // 再生回数をカウントする変数
-
-    while (cnt < 2) {
+    for (int cnt = 0; cnt < 2; cnt++) {
       if (cnt > 0) {
         setState(() => _showText = true); // テキストを表示
       }
@@ -52,8 +50,6 @@ class _ListeningScreenState extends State<ListeningScreen> {
       await _audioPlayer.onPlayerComplete.first; // 再生が終わるまで待機
 
       await Future.delayed(Duration(seconds: 1)); // 1秒待機
-
-      cnt++;
     }
   }
 
